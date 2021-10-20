@@ -14,11 +14,14 @@
 stages:
   - upload
 
-upload:
+
+Google:
   extends: .terraform_module_upload
   variables:
-    TERRAFORM_MODULE_NAME: gitlab-groups-google
+    TERRAFORM_MODULE_NAME: gitlab-groups
     TERRAFORM_MODULE_SYSTEM: google
   stage: upload
+  before_script:
+  - cd providers/google
   rules:
     - if: $CI_COMMIT_TAG
