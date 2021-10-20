@@ -24,7 +24,10 @@ terraform {
 locals {
   gitlab_groups = {
     for x in var.gitlab_groups:
-    "${x.parent}/${x.path}" => merge(x, {parent_id=data.gitlab_group.parents[x.parent].id})
+    "${x.parent}/${x.path}" => merge(x, {
+      parent_id=data.gitlab_group.parents[x.parent].id
+      qualname="${x.parent}/${x.path}"
+    })
   }
 }
 
@@ -53,4 +56,15 @@ resource "gitlab_group" "groups" {
   subgroup_creation_level           = "owner"
   project_creation_level            = "maintainer"
   share_with_group_lock             = false
+}
+
+
+module "secrets" {
+  depends_on  = [gitlab_group.groups]
+  for_each = {for path, project in local.gitlab_groups:
+    path => project
+    if try(project.secrets, []) != []
+  }
+  source = "./modules/secrets"
+  gitlab_group = each.value
 }
