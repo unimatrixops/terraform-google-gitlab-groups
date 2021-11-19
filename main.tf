@@ -27,6 +27,7 @@ locals {
     "${x.parent}/${x.path}" => merge(x, {
       parent_id=data.gitlab_group.parents[x.parent].id
       qualname="${x.parent}/${x.path}"
+      service_account=try(x.service_account, null)
     })
   }
 }
@@ -56,6 +57,21 @@ resource "gitlab_group" "groups" {
   subgroup_creation_level           = "owner"
   project_creation_level            = "maintainer"
   share_with_group_lock             = false
+}
+
+
+module "service-account" {
+  source          = "./modules/service-account"
+
+  service_account = merge(each.value.service_account, {
+    group_id=gitlab_group.groups[each.key].id
+    display_name=gitlab_group.groups[each.key].name
+  })
+
+  for_each = {
+    for k, v in local.gitlab_groups:
+    k => v if v.service_account != null
+  }
 }
 
 
